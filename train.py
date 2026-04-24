@@ -1,84 +1,60 @@
+import os
 import pandas as pd
 import joblib
-import os
-from sklearn.ensemble import RandomForestRegressor
+
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score, mean_absolute_error
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import r2_score
 
-# -----------------------------
-# Load Dataset
-# -----------------------------
-data = pd.read_csv("data/car_data.csv")
-print("✅ Dataset Loaded")
+# ----------------------------
+# 1. Load dataset
+# ----------------------------
+df = pd.read_csv("car_data.csv")  # change file name if needed
 
-# -----------------------------
-# Clean Column Names
-# -----------------------------
-data.columns = data.columns.str.strip().str.lower()
-print("Columns:", data.columns.tolist())
+# ----------------------------
+# 2. Basic preprocessing
+# ----------------------------
+# Example columns (adjust to your dataset):
+# 'Year', 'Kms_Driven', 'Fuel_Type', 'Price'
 
-# -----------------------------
-# Feature Engineering
-# -----------------------------
-# Create car age
-data['car_age'] = 2024 - data['year']
+df = df.dropna()
 
-# -----------------------------
-# Encode Categorical Data
-# -----------------------------
-# Fuel Type
-data['fuel_type'] = data['fuel_type'].str.strip().str.lower()
-data['fuel_type'] = data['fuel_type'].map({'petrol': 0, 'diesel': 1, 'cng': 2})
+# Convert categorical columns if needed
+df = pd.get_dummies(df, drop_first=True)
 
-# Transmission
-data['transmission'] = data['transmission'].str.strip().str.lower()
-data['transmission'] = data['transmission'].map({'manual': 0, 'automatic': 1})
+X = df.drop("Price", axis=1)
+y = df["Price"]
 
-# Selling Type
-data['selling_type'] = data['selling_type'].str.strip().str.lower()
-data['selling_type'] = data['selling_type'].map({'dealer': 0, 'individual': 1})
-
-# -----------------------------
-# Drop unnecessary columns
-# -----------------------------
-data = data.drop(['car_name'], axis=1)
-
-# -----------------------------
-# Features & Target
-# -----------------------------
-X = data.drop('selling_price', axis=1)
-y = data['selling_price']
-
-# Fill missing values
-X = X.fillna(0)
-
-# -----------------------------
-# Train/Test Split
-# -----------------------------
+# ----------------------------
+# 3. Train-test split
+# ----------------------------
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# -----------------------------
-# Model Training
-# -----------------------------
+# ----------------------------
+# 4. Train model
+# ----------------------------
 model = RandomForestRegressor(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 
-# -----------------------------
-# Evaluation
-# -----------------------------
+# ----------------------------
+# 5. Evaluate model
+# ----------------------------
 y_pred = model.predict(X_test)
+score = r2_score(y_test, y_pred)
 
-print(f"R² Score: {r2_score(y_test, y_pred):.2f}")
-print(f"MAE: {mean_absolute_error(y_test, y_pred):.2f}")
+print("Model Accuracy (R2 Score):", score)
 
-# -----------------------------
-# Save Model
-# -----------------------------
-os.makedirs("model", exist_ok=True)
+# ----------------------------
+# 6. Save model safely
+# ----------------------------
+model_dir = "model"
+os.makedirs(model_dir, exist_ok=True)  # FIX: creates folder if not exists
 
-joblib.dump(model, "model/model.pkl")
-joblib.dump(X.columns.tolist(), "model/columns.pkl")
+model_path = os.path.join(model_dir, "model.pkl")
+joblib.dump(model, model_path)
+
+print(f"Model saved successfully at: {model_path}")columns.pkl")
 
 print("✅ Model trained and saved successfully!")
